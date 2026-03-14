@@ -13,10 +13,15 @@ logs/
 groups/*
 !groups/main/
 !groups/global/
+!groups/whatsapp_magnus/
 groups/main/*
 groups/global/*
+groups/whatsapp_magnus/*
 !groups/main/CLAUDE.md
 !groups/global/CLAUDE.md
+!groups/global/tools/
+!groups/global/tools/magnus_bridge.js
+!groups/whatsapp_magnus/CLAUDE.md
 
 # Secrets
 *.keys.json

@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { EventEmitter } from 'events';
 import { PassThrough } from 'stream';
+import fs from 'fs';
+import { spawn } from 'child_process';
 
 // Sentinel markers must match container-runner.ts
 const OUTPUT_START_MARKER = '---NANOCLAW_OUTPUT_START---';
@@ -115,10 +117,12 @@ describe('container-runner timeout behavior', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     fakeProc = createFakeProcess();
+    vi.mocked(spawn).mockClear();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllEnvs();
   });
 
   it('timeout after output resolves as success', async () => {
@@ -206,5 +210,43 @@ describe('container-runner timeout behavior', () => {
     const result = await resultPromise;
     expect(result.status).toBe('success');
     expect(result.newSessionId).toBe('session-456');
+  });
+
+  it('injects Magnus bridge env only for opted-in groups', async () => {
+    vi.stubEnv('MAGNUS_NANOCLAW_BRIDGE_URL', 'http://host.docker.internal:8787');
+    vi.stubEnv('MAGNUS_NANOCLAW_BRIDGE_TOKEN', 'bridge-secret');
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+
+    const bridgeGroup: RegisteredGroup = {
+      ...testGroup,
+      folder: 'whatsapp-magnus',
+      containerConfig: {
+        magnusBridge: {
+          enabled: true,
+        },
+      },
+    };
+
+    const resultPromise = runContainerAgent(
+      bridgeGroup,
+      {
+        ...testInput,
+        groupFolder: 'whatsapp-magnus',
+      },
+      () => {},
+    );
+
+    fakeProc.emit('close', 0);
+    await vi.advanceTimersByTimeAsync(10);
+    await resultPromise;
+
+    const spawnArgs = vi.mocked(spawn).mock.calls.at(-1)?.[1] as string[];
+    expect(spawnArgs).toContain('MAGNUS_NANOCLAW_BRIDGE_ENABLED=1');
+    expect(spawnArgs).toContain(
+      'MAGNUS_NANOCLAW_BRIDGE_URL=http://host.docker.internal:8787',
+    );
+    expect(spawnArgs).toContain(
+      'MAGNUS_NANOCLAW_BRIDGE_TOKEN=bridge-secret',
+    );
   });
 });

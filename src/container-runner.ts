@@ -56,6 +56,35 @@ interface VolumeMount {
   readonly: boolean;
 }
 
+function buildMagnusBridgeEnv(group: RegisteredGroup): string[] {
+  if (!group.containerConfig?.magnusBridge?.enabled) {
+    return [];
+  }
+
+  const bridgeUrl =
+    process.env.MAGNUS_NANOCLAW_BRIDGE_URL ||
+    `http://${CONTAINER_HOST_GATEWAY}:8787`;
+  const bridgeToken = process.env.MAGNUS_NANOCLAW_BRIDGE_TOKEN || '';
+
+  if (!bridgeToken) {
+    logger.warn(
+      { group: group.name, folder: group.folder },
+      'Magnus bridge enabled for group but MAGNUS_NANOCLAW_BRIDGE_TOKEN is not set',
+    );
+  }
+
+  const env = [
+    '-e',
+    'MAGNUS_NANOCLAW_BRIDGE_ENABLED=1',
+    '-e',
+    `MAGNUS_NANOCLAW_BRIDGE_URL=${bridgeUrl}`,
+  ];
+  if (bridgeToken) {
+    env.push('-e', `MAGNUS_NANOCLAW_BRIDGE_TOKEN=${bridgeToken}`);
+  }
+  return env;
+}
+
 function buildVolumeMounts(
   group: RegisteredGroup,
   isMain: boolean,
@@ -213,6 +242,7 @@ function buildVolumeMounts(
 }
 
 function buildContainerArgs(
+  group: RegisteredGroup,
   mounts: VolumeMount[],
   containerName: string,
 ): string[] {
@@ -240,6 +270,7 @@ function buildContainerArgs(
 
   // Runtime-specific args for host gateway resolution
   args.push(...hostGatewayArgs());
+  args.push(...buildMagnusBridgeEnv(group));
 
   // Run as host user so bind-mounted files are accessible.
   // Skip when running as root (uid 0), as the container's node user (uid 1000),
@@ -278,7 +309,7 @@ export async function runContainerAgent(
   const mounts = buildVolumeMounts(group, input.isMain);
   const safeName = group.folder.replace(/[^a-zA-Z0-9-]/g, '-');
   const containerName = `nanoclaw-${safeName}-${Date.now()}`;
-  const containerArgs = buildContainerArgs(mounts, containerName);
+  const containerArgs = buildContainerArgs(group, mounts, containerName);
 
   logger.debug(
     {

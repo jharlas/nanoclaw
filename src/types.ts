@@ -29,6 +29,9 @@ export interface AllowedRoot {
 
 export interface ContainerConfig {
   additionalMounts?: AdditionalMount[];
+  magnusBridge?: {
+    enabled: boolean;
+  };
   timeout?: number; // Default: 300000 (5 minutes)
 }
 
