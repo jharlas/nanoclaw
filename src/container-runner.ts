@@ -62,6 +62,7 @@ function buildMagnusBridgeEnv(group: RegisteredGroup): string[] {
   }
 
   const bridgeUrl =
+    process.env.MAGNUS_NANOCLAW_BRIDGE_CONTAINER_URL ||
     process.env.MAGNUS_NANOCLAW_BRIDGE_URL ||
     `http://${CONTAINER_HOST_GATEWAY}:8787`;
   const bridgeToken = process.env.MAGNUS_NANOCLAW_BRIDGE_TOKEN || '';

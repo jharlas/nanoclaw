@@ -214,7 +214,7 @@ describe('container-runner timeout behavior', () => {
 
   it('injects Magnus bridge env only for opted-in groups', async () => {
     vi.stubEnv(
-      'MAGNUS_NANOCLAW_BRIDGE_URL',
+      'MAGNUS_NANOCLAW_BRIDGE_CONTAINER_URL',
       'http://host.docker.internal:8787',
     );
     vi.stubEnv('MAGNUS_NANOCLAW_BRIDGE_TOKEN', 'bridge-secret');

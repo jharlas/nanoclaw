@@ -188,7 +188,8 @@ export async function callMagnusBridge(
     assistantName: string;
   },
 ): Promise<string> {
-  const bridgeUrl = process.env.MAGNUS_NANOCLAW_BRIDGE_URL || '';
+  const bridgeUrl =
+    process.env.MAGNUS_NANOCLAW_BRIDGE_HOST_URL || 'http://127.0.0.1:8787';
   const bridgeToken = process.env.MAGNUS_NANOCLAW_BRIDGE_TOKEN || '';
   if (!bridgeUrl || !bridgeToken) {
     throw new Error('Magnus bridge is not configured');
