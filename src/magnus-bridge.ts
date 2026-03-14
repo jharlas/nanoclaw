@@ -12,7 +12,7 @@ export function classifyMagnusBridgeIntent(
   if (!group.containerConfig?.magnusBridge?.enabled) return null;
   const latestUserMessage = [...messages]
     .reverse()
-    .find((m) => !m.is_from_me && !m.is_bot_message);
+    .find((m) => !m.is_bot_message);
   if (!latestUserMessage) return null;
 
   const text = latestUserMessage.content.trim();
