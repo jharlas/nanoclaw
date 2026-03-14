@@ -77,6 +77,16 @@ export function startCredentialProxy(
               headers['authorization'] = `Bearer ${oauthToken}`;
             }
           }
+          // Also handle x-api-key: placeholder from non-CLI clients (e.g. Python SDK)
+          // by converting to OAuth Bearer auth so they can use the proxy too.
+          if (
+            headers['x-api-key'] === 'placeholder' &&
+            oauthToken &&
+            !headers['authorization']
+          ) {
+            delete headers['x-api-key'];
+            headers['authorization'] = `Bearer ${oauthToken}`;
+          }
         }
 
         const upstream = makeRequest(

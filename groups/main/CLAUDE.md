@@ -244,3 +244,74 @@ When scheduling tasks for other groups, use the `target_group_jid` parameter wit
 - `schedule_task(prompt: "...", schedule_type: "cron", schedule_value: "0 9 * * 1", target_group_jid: "120363336345536173@g.us")`
 
 The task will run in that group's context with access to their files and memory.
+
+---
+
+## Hedge Fund Research Assistant
+
+You have a research assistant mounted into your container. It ingests research documents, extracts structured intelligence, and produces reports.
+
+### Mounted Directories
+
+| Container Path | Purpose | Access |
+|----------------|---------|--------|
+| `/workspace/extra/research` | Source research documents (PDFs, text, etc.) | read-only |
+| `/workspace/extra/app` | Hedge fund assistant Python code | read-only |
+| `/workspace/extra/reports` | Generated reports output | read-write |
+| `/workspace/extra/secrets` | API keys (Alpha Vantage, Google GenAI) | read-only |
+
+### Available Commands
+
+Run these from the container:
+
+```bash
+# Ingest new research documents (use --limit to batch)
+python3 /workspace/extra/app/scripts/ingest_new_docs.py --limit 20
+
+# Build/rebuild vector search index
+python3 /workspace/extra/app/scripts/build_index.py
+
+# Search the research repository
+python3 /workspace/extra/app/scripts/search_research.py --query "AI power bottleneck"
+
+# Generate today's daily brief
+python3 /workspace/extra/app/scripts/generate_daily_brief.py
+
+# Generate a thesis memo on a theme
+python3 /workspace/extra/app/scripts/generate_thesis.py --theme "AI cooling and power"
+
+# Rank watchlist names with market context
+python3 /workspace/extra/app/scripts/rank_watchlist.py
+
+# Monitor active theses for strengthening/weakening
+python3 /workspace/extra/app/scripts/monitor_theses.py
+
+# Conviction check — bull AND bear case for any ticker or theme
+python3 /workspace/extra/app/scripts/conviction_check.py --ticker VRT
+python3 /workspace/extra/app/scripts/conviction_check.py --theme "AI power demand" --stance bullish
+```
+
+### Batch Ingestion
+
+Ingestion uses Claude to enrich each document (~30-60s per doc). For large batches:
+- Use `--limit 20` to process 20 docs at a time
+- The script skips already-ingested docs, so re-running is safe
+- After ingesting, always rebuild the index with `build_index.py`
+- Send a progress message to the user via `send_message` before starting long ingestion runs
+- For initial corpus ingestion (hundreds of files), schedule multiple batches rather than one huge run
+
+### Daily Workflow
+
+When asked for a daily brief or morning update:
+1. `python3 /workspace/extra/app/scripts/ingest_new_docs.py --limit 50`
+2. `python3 /workspace/extra/app/scripts/build_index.py`
+3. `python3 /workspace/extra/app/scripts/generate_daily_brief.py`
+
+### Research Assistant Rules
+
+- Never modify source research documents
+- Never invent evidence — every claim must cite a source
+- Separate direct evidence from inference
+- Every thesis must include risks and disconfirming evidence
+- Never place trades or recommend execution
+- Reports are saved to `/workspace/extra/reports/`
