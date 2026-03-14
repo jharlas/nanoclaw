@@ -193,31 +193,8 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
     'Processing messages',
   );
 
-  const bridgeIntent = classifyMagnusBridgeIntent(group, missedMessages);
-  if (bridgeIntent) {
-    await channel.setTyping?.(chatJid, true);
-    try {
-      const text = await callMagnusBridge(bridgeIntent.operation, bridgeIntent.params, {
-        groupFolder: group.folder,
-        chatJid,
-        assistantName: ASSISTANT_NAME,
-      });
-      if (text) {
-        await channel.sendMessage(chatJid, text);
-      }
-      logger.info(
-        { group: group.name, operation: bridgeIntent.operation },
-        'Handled message via deterministic Magnus bridge route',
-      );
-      return true;
-    } catch (err) {
-      logger.warn(
-        { group: group.name, operation: bridgeIntent.operation, err },
-        'Deterministic Magnus bridge route failed; falling back to agent',
-      );
-    } finally {
-      await channel.setTyping?.(chatJid, false);
-    }
+  if (await tryHandleMagnusBridgeIntent(group, chatJid, missedMessages, channel)) {
+    return true;
   }
 
   // Track idle timer for closing stdin when agent is idle
@@ -289,6 +266,45 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
   }
 
   return true;
+}
+
+async function tryHandleMagnusBridgeIntent(
+  group: RegisteredGroup,
+  chatJid: string,
+  messages: NewMessage[],
+  channel: Channel,
+): Promise<boolean> {
+  const bridgeIntent = classifyMagnusBridgeIntent(group, messages);
+  if (!bridgeIntent) return false;
+
+  await channel.setTyping?.(chatJid, true);
+  try {
+    const text = await callMagnusBridge(
+      bridgeIntent.operation,
+      bridgeIntent.params,
+      {
+        groupFolder: group.folder,
+        chatJid,
+        assistantName: ASSISTANT_NAME,
+      },
+    );
+    if (text) {
+      await channel.sendMessage(chatJid, text);
+    }
+    logger.info(
+      { group: group.name, operation: bridgeIntent.operation },
+      'Handled message via deterministic Magnus bridge route',
+    );
+    return true;
+  } catch (err) {
+    logger.warn(
+      { group: group.name, operation: bridgeIntent.operation, err },
+      'Deterministic Magnus bridge route failed; falling back to agent',
+    );
+    return false;
+  } finally {
+    await channel.setTyping?.(chatJid, false);
+  }
 }
 
 async function runAgent(
@@ -444,6 +460,22 @@ async function startMessageLoop(): Promise<void> {
           );
           const messagesToSend =
             allPending.length > 0 ? allPending : groupMessages;
+
+          if (
+            await tryHandleMagnusBridgeIntent(
+              group,
+              chatJid,
+              messagesToSend,
+              channel,
+            )
+          ) {
+            lastAgentTimestamp[chatJid] =
+              messagesToSend[messagesToSend.length - 1].timestamp;
+            saveState();
+            queue.closeStdin(chatJid);
+            continue;
+          }
+
           const formatted = formatMessages(messagesToSend, TIMEZONE);
 
           if (queue.sendMessage(chatJid, formatted)) {
