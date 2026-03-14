@@ -52,6 +52,10 @@ import {
   loadSenderAllowlist,
   shouldDropMessage,
 } from './sender-allowlist.js';
+import {
+  callMagnusBridge,
+  classifyMagnusBridgeIntent,
+} from './magnus-bridge.js';
 import { startSchedulerLoop } from './task-scheduler.js';
 import { Channel, NewMessage, RegisteredGroup } from './types.js';
 import { logger } from './logger.js';
@@ -188,6 +192,33 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
     { group: group.name, messageCount: missedMessages.length },
     'Processing messages',
   );
+
+  const bridgeIntent = classifyMagnusBridgeIntent(group, missedMessages);
+  if (bridgeIntent) {
+    await channel.setTyping?.(chatJid, true);
+    try {
+      const text = await callMagnusBridge(bridgeIntent.operation, bridgeIntent.params, {
+        groupFolder: group.folder,
+        chatJid,
+        assistantName: ASSISTANT_NAME,
+      });
+      if (text) {
+        await channel.sendMessage(chatJid, text);
+      }
+      logger.info(
+        { group: group.name, operation: bridgeIntent.operation },
+        'Handled message via deterministic Magnus bridge route',
+      );
+      return true;
+    } catch (err) {
+      logger.warn(
+        { group: group.name, operation: bridgeIntent.operation, err },
+        'Deterministic Magnus bridge route failed; falling back to agent',
+      );
+    } finally {
+      await channel.setTyping?.(chatJid, false);
+    }
+  }
 
   // Track idle timer for closing stdin when agent is idle
   let idleTimer: ReturnType<typeof setTimeout> | null = null;
