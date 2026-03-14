@@ -250,6 +250,7 @@ function buildContainerArgs(
 
   // Pass host timezone so container's local time matches the user's
   args.push('-e', `TZ=${TIMEZONE}`);
+  args.push('-e', `NANOCLAW_GROUP_FOLDER=${group.folder}`);
 
   // Route API traffic through the credential proxy (containers never see real secrets)
   args.push(

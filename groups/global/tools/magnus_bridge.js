@@ -3,6 +3,9 @@
 const bridgeUrl = process.env.MAGNUS_NANOCLAW_BRIDGE_URL || '';
 const bridgeToken = process.env.MAGNUS_NANOCLAW_BRIDGE_TOKEN || '';
 const bridgeEnabled = process.env.MAGNUS_NANOCLAW_BRIDGE_ENABLED === '1';
+const groupFolder = process.env.NANOCLAW_GROUP_FOLDER || '';
+const chatJid = process.env.NANOCLAW_CHAT_JID || '';
+const assistantName = process.env.ASSISTANT_NAME || '';
 
 function printUsage() {
   console.error(`Usage:
@@ -86,6 +89,10 @@ async function main() {
     headers: {
       Authorization: `Bearer ${bridgeToken}`,
       'Content-Type': 'application/json',
+      'User-Agent': 'nanoclaw-magnus-bridge/1',
+      'X-NanoClaw-Group': groupFolder,
+      'X-NanoClaw-Chat': chatJid,
+      'X-NanoClaw-Assistant': assistantName,
     },
     body: JSON.stringify({
       operation,
