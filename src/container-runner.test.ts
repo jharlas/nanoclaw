@@ -213,7 +213,10 @@ describe('container-runner timeout behavior', () => {
   });
 
   it('injects Magnus bridge env only for opted-in groups', async () => {
-    vi.stubEnv('MAGNUS_NANOCLAW_BRIDGE_URL', 'http://host.docker.internal:8787');
+    vi.stubEnv(
+      'MAGNUS_NANOCLAW_BRIDGE_URL',
+      'http://host.docker.internal:8787',
+    );
     vi.stubEnv('MAGNUS_NANOCLAW_BRIDGE_TOKEN', 'bridge-secret');
     vi.mocked(fs.existsSync).mockReturnValue(false);
 
@@ -245,8 +248,6 @@ describe('container-runner timeout behavior', () => {
     expect(spawnArgs).toContain(
       'MAGNUS_NANOCLAW_BRIDGE_URL=http://host.docker.internal:8787',
     );
-    expect(spawnArgs).toContain(
-      'MAGNUS_NANOCLAW_BRIDGE_TOKEN=bridge-secret',
-    );
+    expect(spawnArgs).toContain('MAGNUS_NANOCLAW_BRIDGE_TOKEN=bridge-secret');
   });
 });
