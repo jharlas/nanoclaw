@@ -30,8 +30,9 @@ export function classifyMagnusBridgeIntent(
   }
 
   const researchQueryMatch =
-    lower.match(/\b(?:research on|search research for|find notes on|notes on)\s+(.+)/i) ||
-    lower.match(/\b(?:research|notes)\s+(?:for|on)\s+(.+)/i);
+    lower.match(
+      /\b(?:research on|search research for|find notes on|notes on)\s+(.+)/i,
+    ) || lower.match(/\b(?:research|notes)\s+(?:for|on)\s+(.+)/i);
   if (researchQueryMatch?.[1]) {
     return {
       operation: 'research_search',
@@ -42,7 +43,9 @@ export function classifyMagnusBridgeIntent(
     };
   }
 
-  const situationMatch = lower.match(/\b(?:situation room(?: for)?|war room(?: for)?)\s+(.+)/i);
+  const situationMatch = lower.match(
+    /\b(?:situation room(?: for)?|war room(?: for)?)\s+(.+)/i,
+  );
   if (situationMatch?.[1]) {
     return {
       operation: 'situation_room',
@@ -53,8 +56,9 @@ export function classifyMagnusBridgeIntent(
   }
 
   const latestEventMatch =
-    lower.match(/\b(?:latest update on|latest on|update on|status of)\s+(.+)/i) ||
-    lower.match(/\bwhat(?:'s| is) the latest(?: status)? of\s+(.+)/i);
+    lower.match(
+      /\b(?:latest update on|latest on|update on|status of)\s+(.+)/i,
+    ) || lower.match(/\bwhat(?:'s| is) the latest(?: status)? of\s+(.+)/i);
   if (latestEventMatch?.[1]) {
     return {
       operation: 'event_update',
@@ -105,7 +109,10 @@ function clip(text: unknown, maxLen = 1400): string {
   return value.length > maxLen ? `${value.slice(0, maxLen - 3)}...` : value;
 }
 
-function formatBulletList(items: unknown[], formatter: (item: unknown) => string): string[] {
+function formatBulletList(
+  items: unknown[],
+  formatter: (item: unknown) => string,
+): string[] {
   return items
     .slice(0, 5)
     .map((item) => formatter(item))
@@ -121,7 +128,9 @@ export function formatMagnusBridgeResponse(
   if (summary) lines.push(summary);
 
   if (operation === 'research_room') {
-    const fresh = Array.isArray(result.fresh_research) ? result.fresh_research : [];
+    const fresh = Array.isArray(result.fresh_research)
+      ? result.fresh_research
+      : [];
     const bullets = formatBulletList(fresh, (raw) => {
       const item = (raw || {}) as Record<string, unknown>;
       const title = clip(item.title, 120);
@@ -151,13 +160,18 @@ export function formatMagnusBridgeResponse(
       lines.push('', narrative);
     }
   } else if (operation === 'morning_brief' || operation === 'start_of_day') {
-    const primaryAction = (result.primary_action || {}) as Record<string, unknown>;
+    const primaryAction = (result.primary_action || {}) as Record<
+      string,
+      unknown
+    >;
     const label = clip(primaryAction.label, 200);
     if (label) {
       lines.push('', `Primary action: ${label}`);
     }
   } else if (operation === 'portfolio_summary') {
-    const total = result.total_portfolio_value_including_external || result.total_portfolio_value;
+    const total =
+      result.total_portfolio_value_including_external ||
+      result.total_portfolio_value;
     const cash = result.cash_usd;
     lines.push('', `Portfolio total: ${total}`, `Cash: ${cash}`);
   }
@@ -196,7 +210,9 @@ export async function callMagnusBridge(
   const payload = (await response.json()) as Record<string, unknown>;
   if (!response.ok) {
     const error = (payload.error || {}) as Record<string, unknown>;
-    throw new Error(String(error.message || `Bridge request failed (${response.status})`));
+    throw new Error(
+      String(error.message || `Bridge request failed (${response.status})`),
+    );
   }
 
   const result = (payload.result || {}) as Record<string, unknown>;

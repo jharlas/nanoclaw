@@ -193,7 +193,9 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
     'Processing messages',
   );
 
-  if (await tryHandleMagnusBridgeIntent(group, chatJid, missedMessages, channel)) {
+  if (
+    await tryHandleMagnusBridgeIntent(group, chatJid, missedMessages, channel)
+  ) {
     return true;
   }
 
