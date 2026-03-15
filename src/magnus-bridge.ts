@@ -135,11 +135,14 @@ export function formatMagnusBridgeResponse(
       const item = (raw || {}) as Record<string, unknown>;
       const title = clip(item.title, 120);
       const source = clip(item.source, 40);
+      const why = clip(item.why_it_matters || item.summary, 160);
       if (!title) return '';
-      return `• ${title}${source ? ` (${source})` : ''}`;
+      return `• ${title}${source ? ` (${source})` : ''}${why ? ` — ${why}` : ''}`;
     });
     if (bullets.length) {
-      lines.push('', 'Fresh research:', ...bullets);
+      lines.length = 0;
+      lines.push('Top reads for your book:', ...bullets);
+      return lines.join('\n').trim();
     }
   } else if (operation === 'research_search') {
     const matches = Array.isArray(result.matches) ? result.matches : [];

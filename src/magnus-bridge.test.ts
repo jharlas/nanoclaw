@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   callMagnusBridge,
   classifyMagnusBridgeIntent,
+  formatMagnusBridgeResponse,
 } from './magnus-bridge.js';
 import type { RegisteredGroup } from './types.js';
 
@@ -116,5 +117,26 @@ describe('callMagnusBridge', () => {
 
     const requestUrl = fetchMock.mock.calls[0]?.[0];
     expect(String(requestUrl)).toBe('http://10.0.0.5:9001/v1/query');
+  });
+});
+
+describe('formatMagnusBridgeResponse', () => {
+  it('formats research room responses as book-aware reading bullets', () => {
+    const text = formatMagnusBridgeResponse('research_room', {
+      summary: 'Research Room has fresh evidence.',
+      fresh_research: [
+        {
+          title: 'ORCL capex note',
+          source: 'GS',
+          why_it_matters:
+            'Read-through to active expressions GOOG, MSFT across hyperscaler platform.',
+        },
+      ],
+    });
+
+    expect(text).toContain('Top reads for your book:');
+    expect(text).toContain('ORCL capex note (GS)');
+    expect(text).toContain('GOOG, MSFT');
+    expect(text).not.toContain('Research Room has fresh evidence.');
   });
 });
